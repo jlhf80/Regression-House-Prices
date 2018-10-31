@@ -1,12 +1,10 @@
 ##############################################
 # James Henson
-# CIS 508: Data Mining I
 # House Prices: Advanced Regression Techniques
 # filename: HousePrice_LinearRegression.R
 #
-# The purpose of the assignment is to submit a prediction for house prices
-# based on the provided data from the Kaggle Competition. Here, our submissions are
-# evaluated on RMSE of the log of the predicted value and the log of the observed sales price.
+# Exploring linear regression techniques with 
+# Zillow dataset from Kaggle Competition
 #
 ##############################################
 
