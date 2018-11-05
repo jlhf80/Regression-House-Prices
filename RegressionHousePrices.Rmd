@@ -266,7 +266,7 @@ comp1
 
 In this write up we have attempted to predict housing prices in Ames, Iowa using a dataset provided by Zillow via Kaggle. Quickly, we found that fitting a linear regression model to all attributes results in overfitting the dataset and poor predictive performance. 
 
-By using stepwise regression, we found that we could eliminate some of the attributes and produce a model with similiar adjusted-R squared as the larger linear model. However, this technique did not prevent overfitting the data and took a large amount of time to run. Further, the results of stepwise regression do not guarantee improvement. As seen in the results table above, our backwards stepwise regression actually presented a significant decrease in prediction performance, while our secod stepwise model delivered similiar performance to the LinReg model.
+By using stepwise regression, we found that we could eliminate some of the attributes and produce a model with similiar adjusted-R squared as the larger linear model. However, this technique did not prevent overfitting the data and took a large amount of time to run. Further, the results of stepwise regression do not guarantee improvement. As seen in the results table above, our backwards stepwise regression actually presented a significant decrease in prediction performance, while our second stepwise model delivered similiar performance to the LinReg model.
 
 By using penalized regression techniques, we have produced models that reduce overfitting and improve predictive performance. In the case of LASSO and Elast Net regression, we have been able to reduce the amount of attributes significantly to 24 from 306 while maintaining similiar predictive performance. 
 
