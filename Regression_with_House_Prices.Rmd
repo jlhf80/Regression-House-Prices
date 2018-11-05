@@ -1,0 +1,268 @@
+---
+title: "Linear Regression with Zillow House Prices"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+test <- "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/test.csv"
+train <- "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/train.csv"
+train <- read.csv(train)
+test <- read.csv(test)
+```
+
+# Introduction
+
+Zillow Group is a set of brands with a mission to "Build the largest, most trusted and vibrant home-related marketplace in the world". Within Zillow Group exists Zillow, a real estate and rental marketplace that seeks to empower consumers with data and knowledge throughout the home buying/renting lifecycle. Zillow's Zestimate is an estimated market value for an individual home that seeks to provide buyers and sellers with a viable starting point for home valuation.
+
+## Kaggle - House Prices: Advanced Regression Techniques
+
+In the form of an open Kaggle competition, Zillow has provided housing data with 79 attributes for residentail homes in Ames, Iowa. The goal is to predict the final price of each home. Here, we will focus on the application of linear, stepwise, and penalized regression models. It is worth noting that more time should be spent exploring the data and developing intuition. However, my goal here is to show the application of regression techniques.
+
+# Data
+
+Now, lets take a look at some data - Kaggle provides us with two datasets labeled test and train, respectively. The idea here is to use the train dataset to fit a model and the test dataset to make predictions and submit a csv to be graded by Kaggle. Here is a view of the training set.
+
+```{r}
+head(train)
+```
+
+Lets take a look at the attributes provided in the dataset. A brief description of each can be found on the Data page for the Kaggle competition.
+```{r}
+colnames(train)
+```
+
+## NA Values
+From the above we know that we have a dataset with mixed datatypes and NA values are present. Lets take a look at which columns contain NA values
+
+```{r}
+colnames(train[colSums(is.na(train))>0])
+```
+
+Note that handling of NA and missing values is very important and can have an impact on the performance of a predictive model. Somes modelling techniques are better at handling NA values than others. For the sake of demonstrating the application of regression techniques, I am going to breeze over this otherwise very important topic.
+
+In the light of brevity, we are simply going to dummy the dataframe to create columns for categorical attributes. In doing so, it also becomes apparent that we have three numerical features that contain NA values. We are going to set these to zero. In any other setting, it would be important to take the time and investigate each of columns with NA values. There are several ways to handle missing and NA values, and taking the time to understand why they occur will allow the analyst to develop intuition and select appropriate techniques to handle such occurences. 
+
+Some of the other techniques for handling NA values include dropping rows/columns and imputation. When imputing the value of an NA, we can use simple calculations such as a mean and median, or we can even deploy other statistical learning techniques. K-NN, linear regression, and decision trees are other methods deployed in some wrapper classes such as caret. In a later writeup, we may explore the use of caret for the data science workflow.
+```{r}
+library(dummies)
+df <- dummy.data.frame(train)
+colnames(df[colSums(is.na(df))>0])
+```
+
+For brevity, lets set NA values in the columns above to zero:
+```{r}
+df[is.na(df)]<- 0
+```
+```{r, include = FALSE}
+# For predictions purposes later, we need to combine test and train datasets, dummy the data, and then split back into the original test and train split
+# Import data
+train <- read.csv( "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/train.csv")
+test <- read.csv( "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/test.csv")
+
+# Combine datasets before preprocessing to ensure same columns during prediction 
+train_df <- train
+test_df <- test
+train_df["dataset"]<- c("train")
+test_df["SalePrice"]<- 0
+
+test_df["dataset"]<- c("test")
+
+df <- rbind(train_df,test_df)
+
+# dummy data
+df <- dummy.data.frame(df)
+
+# 3 attributes are int and have nulls
+colnames(df[colSums(is.na(df))>0])
+str(df[colSums(is.na(df))>0])
+
+# replace with zero
+df[is.na(df)]<-0
+str(df[colSums(is.na(df))>0])
+
+# Seperate test and train df
+train <- df[df$datasettest %in% 0,]
+test <- df[df$datasettest %in% 1,]
+
+
+# remove added columns for test and train, sale price on test set
+drop <- c("datasettest","datasettrain")
+drop_sale <- c("SalePrice")
+
+train <- train[, !(names(train) %in% drop)]
+test <- test[, !(names(test) %in% drop)]
+test <- test[, !(names(test) %in% drop_sale)]
+
+# assignment to re use code
+df <- train
+```
+
+# Linear Regression
+
+For analysis, linear regression can be a powerful tool. When using linear regression to develop inference, several assumptions must be confirmed. Some of these assumptions include linearity, homoscedasticity, no autocorrelation, and no perfect multicollinearity. Assumptions can be checked using probability plots, specific tests such as the Durbin-Watson test for autocorellation, and calculations such as Variance Inflation Factor (VIF).
+
+Since our goal here is prediction, we will start by loading the full model. If we were trying to pull inference from the data with a linear model, I would begin by inspecting base models where we regress each variable against the dependent variable and test for non zero regression coefficients. Instead, we will load the full model and print the summary table where we see high r^2 value that might suggest overfitting.
+
+```{r}
+fit <- lm(SalePrice ~ ., data = df)
+summary(fit)$adj.r.squared
+```
+
+A few observations are immediately apparent. First, the full model contains a large amount of attributes - 306 to be exact. Second, several of the attributes have NA as the coefficient. Lastly, the adjusted R-squared is almost .92!
+
+```{r}
+plot(fit)
+```
+
+Interpreting this initial model may not be feasible, yet alone desireable. With such a large adjusted-R squared, interesting behavior in the probability plot, and several outliers in the residual plot, it would not be a stretch to suggest that this model overfits the data. This is dangerous because overfitting our training data may lead to a model that does not generalize well.
+
+# Stepwise Regression
+One technique to reduce the amount of features or attributes in a regression model is to use stepwise regression. This technique uses an estimator of statistical quality to balance a trade off between model simplicity and model performance. Akaike or Bayes Information Criterion (AIC or BIC, respectively) are  the most common estimators used in stepwise regression.
+
+While stepwise regression can help with attribute selection, the methods used to perform the technique can be slow and not always exhaustive. Popular flavors include forward and backward selection, where attributes are either added or removed from the regression model and the selected criterion is calculated. For instance, when using backward stepwise with AIC, models are built and evaluated by AIC until a min AIC is determined. Once stopping conditions are reached, a subset of coefficients are returned by the stepwise regression.
+
+Since stepwise regression can be a timely process, we are going to use a basic dataset with columns containing NA values removed. This is for the illustration of stepwise regression - not a recommended workflow.
+
+```{r}
+# build dataframe for stepwise
+df_na <- train[colSums(is.na(train))>0]
+to.remove <- c(colnames(df_na))
+'%ni%' <- Negate('%in%')
+df_step <- subset(train, select= names(train) %ni% to.remove)
+
+# Full linear and stepwise models
+library(MASS)
+full <- lm(SalePrice ~ ., data = df_step)
+step <- stepAIC(full, direction = "backward", trace = FALSE )
+step_lm <- lm(formula = SalePrice ~ MSZoning + LotArea + Street + LandContour + 
+    LotConfig + LandSlope + Neighborhood + Condition1 + Condition2 + 
+    BldgType + HouseStyle + OverallQual + OverallCond + YearBuilt + 
+    YearRemodAdd + RoofStyle + RoofMatl + ExterQual + Foundation + 
+    BsmtFinSF1 + BsmtFinSF2 + BsmtUnfSF + X1stFlrSF + X2ndFlrSF + 
+    FullBath + BedroomAbvGr + KitchenAbvGr + KitchenQual + TotRmsAbvGrd + 
+    Functional + Fireplaces + GarageCars + GarageArea + WoodDeckSF + 
+    ScreenPorch + PoolArea + MoSold + SaleType, data = df_step)
+summary(step_lm)$adj.r.squared
+```
+```{r}
+summary(full)$adj.r.squared
+```
+
+Just like the full model, we see a suspiciously high value for the adjusted-R squared from the model selected by the backward stepwise regression. Moreover, with our dummied dataset, stepwise regression ran for more than 20 minutes before I decided to proceed with a simple example.
+
+In comparison to the full model with 306 attributes, our stepwise regression model only has 123 attributes. While this may be an improvement in terms of selecting a more parsimonious model, a high adjusted-R squared still suggests overfitting.
+
+```{r}
+# Attributes in stepwise model with backward select and AIC criteria
+nrow(summary(step_lm)$coef)
+```
+
+
+# LASSO, Ridge, and Elastic Net Regression
+
+Given that our initial linear regression model appears to overfit and has several (306) attributes, building a pertinent model from an inferencial standpoint may be a long, tedious, and perhaps unnecessary process. Penalized regression combined with cross-validation allows us to reduce 
+
+Least Absolute Shrinkage and Selection Operator (LASSO) is a technique in regression that provides variable selection. The idea is reduce the size of coefficients so that the regression model generalizes better when applied to new data. I.e. to improve the prediction accuracy.
+
+Ridge regression has similiar goals, however, Ridge will not set a coefficient to zero. It is noted that Ridge regression can handle multicollinearity (Applied Predictive Modeling).
+
+Elastic Net Regression allows use to utilize a combination of LASSO and Ridge penalties and tune for an effective combination of each to reduce error.
+
+Here we begin by creating model matrices neccesary for cv.glmnet, the package we will use to perform penalized regression. We will then construct and plot the coefficient and error plots for a LASSO, Ridge, and Elastic Net models. Lastly, we will loop through cv.glmnet to build models with alpha between 0 and 1. Alpha is the a tuning parameter that weights our penalized regression. At alpha = 0 we have a Ridge regression penalty and at alpha = 1 we have a LASSO penalty.
+
+```{r}
+library(glmnet)
+df2 <- df[,!names(df) %in% c("SalePrice")]
+y <- as.matrix(df$SalePrice)
+x <- as.matrix(as.data.frame(lapply(df2, as.numeric)))
+
+mod.lasso <- glmnet(x,y, family = "gaussian", alpha = 1)
+mod.ridge <- glmnet(x,y, family = "gaussian", alpha = 0)
+mod.enet <- glmnet(x,y, family = "gaussian", alpha = 0.5)
+
+# Loop through cv.glmnet to produce models with alpa as each tenth from 0 to 1 
+for (i in 0:10){
+  assign(paste("mod",i,sep = ""), cv.glmnet(x,y, type.measure = "mse", alpha = i/10,
+                                            family = "gaussian"))
+}
+
+# Plot
+par(mfrow=c(3,2))
+plot(mod.lasso, xvar = "lambda", main = "LASSO")
+plot(mod10, main = "LASSO")
+
+plot(mod.ridge, xvar = "lambda", main = "Ridge")
+plot(mod0, main = "Ridge")
+
+plot(mod.enet, xvar = "lambda", main = "ElasticNet")
+plot(mod5, main = "ElasticNet")
+```
+
+From the plots above we see how the size of the coefficients increase as lambda increases. Likewise, we can see the mean-squared error (MSE) of each model as lambda and the amount of coefficients varies. The dotted lines on the MSE plot represent the standard error of the minimum lambda value for the best of each model. 
+
+In the following code, I am choosing to use lambda.1se to evaluate models. It is worth noting that lambda.min may give the best model, but it also may slightly overfit or be too complex. Instead, lambda.1se is the simplest model that has comparable error to the best model
+
+Nonetheless, lets count how many coefficients each model keeps at lambda.1se:
+
+```{r, include=FALSE}
+cmat10 <- coef(mod10,s=mod10$lambda.1se)[,1] # [,1] drops sparse matrix format
+cmat10 <- as.data.frame(cmat10)
+coeff_mod10 <- subset(cmat10, cmat10 != 0)
+
+cmat0 <- coef(mod0, s=mod0$lambda.1se)[,1]
+cmat0 <- as.data.frame(cmat0)
+coeff_mod0 <- subset(cmat0, cmat0 != 0)
+
+cmat5 <- coef(mod5, s=mod5$lambda.1se)[,1]
+cmat5 <- as.data.frame(cmat5)
+coeff_mod5 <- subset(cmat5, cmat5 != 0)
+
+```
+```{r}
+nrow(coeff_mod10)
+nrow(coeff_mod0) 
+nrow(coeff_mod5)
+```
+
+Now we have built the models how do we interpret which one is best?
+One way to evaluate the in sample performance of the penalized models is to look at the cvm and cvsd provided from cv.glmnet.
+
+Cvm represents the cross-validated mean square error produced by each model. Cvsd represents the standard error for the cvm of each model. The idea is that the model with the lowest error will generalize best when tasked with prediction.
+
+```{r}
+moddf <- c("Lasso","Ridge","ElasticNet")
+lamda1se <- c(mod10$lambda.1se, mod0$lambda.1se, mod5$lambda.1se)
+lamdamin <- c(mod10$lambda.min, mod0$lambda.min, mod5$lambda.min)
+cvmMin <- c(min(mod10$cvm), min(mod0$cvm), min(mod5$cvm))
+cvsdMin <- c(min(mod10$cvsd), min(mod0$cvsd), min(mod5$cvsd))
+df_eval <- data.frame(moddf,lamda1se, lamdamin, cvmMin, cvsdMin)
+df_eval
+```
+
+
+# Comparing Results
+
+Test, train, and validate is a workflow that can be in predictive modeling to produce, monitor, and hopefully improve results. So far, we have built models and evaluated them on in sample metrics such as r^2 or with calculations using sampling techniques (i.e. cross-validated mean error: cvm). Using the predict function, we can specify a trained model and a dataset to create predictions. I'll skip the code for brevity, but in the dataframe below we can see the results of each model after submitting them for scoring to the Kaggle competition
+
+```{r, include=FALSE}
+Model <- c("LinReg", "Backward Step", "Both Step","LASSO","Ridge","ElasticNet")
+Metric <- c("0.19622","0.54674","0.20231","0.16560","0.16154","0.16495")
+Coeff <- c(nrow(summary(mod)$coef), nrow(summary(step_mod)$coef), nrow(summary(step_both)$coef), nrow(coeff_mod10), nrow(coeff_mod0), nrow(coeff_mod5))
+adj.r2 <- c(round(summary(mod)$adj.r.squared,3), round(summary(step_mod)$adj.r.squared,3), round(summary(step_both)$adj.r.squared,3),"" ,"","")
+cvm <- c("","","",signif(min(mod10$cvm),4), signif(min(mod0$cvm),4), signif(min(mod5$cvm),4))
+cvsd <- c("","","",signif(min(mod10$cvsd),3), signif(min(mod0$cvsd),3), signif(min(mod5$cvsd),3))
+comp <- data.frame(Model, Coeff, adj.r2,cvm,cvsd)
+comp
+```
+
+From above, we can rule out the linear regression (LinReg) and stepwise models since they have an unreasonably high adjusted-R squared as well as a large amount of coefficients (overfit). Looking at the penalized regression models, we want to choose a model with the best cross-validated mean error (cvm) and the smallest estimate of standard error for cvm (cvsd). Even though the LASSO and ElasticNet model produce a better cvm than the Ridge regression, we might expect the Ridge regression to perform better in prediction due to the amount of coefficients in the model. Deciding between the penalized models may be circumstantial to other requirements (i.e. Fitting and storing a model with 24 coefficients is less taxing than doing so with 306 coefficients). Finally, lets take a look at the scoring metric used by Kaggle. According to the competition webpage, "Submissions are evaluated on Root-Mean-Squared-Error (RMSE) between the logarithm of the predicted value and the logarithm of the observed sales price."
+
+```{r}
+comp1<- data.frame(Model, Coeff, Metric)
+comp1
+```
+
+# Final Words
+
+In this write up we have attempted to predict housing prices in Ames, Iowa using a dataset provided by Zillow via Kaggle. Quickly, we found that fitting a linear regression model to all attributes results in overfitting the dataset and poor predictive performance. 

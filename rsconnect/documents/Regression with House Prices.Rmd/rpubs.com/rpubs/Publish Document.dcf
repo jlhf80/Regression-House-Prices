@@ -1,0 +1,10 @@
+name: Publish Document
+title:
+username:
+account: rpubs
+server: rpubs.com
+hostUrl: rpubs.com
+appId: https://api.rpubs.com/api/v1/document/435400/cd8becb623c54cc98a94a85e2201fb39
+bundleId: https://api.rpubs.com/api/v1/document/435400/cd8becb623c54cc98a94a85e2201fb39
+url: http://rpubs.com/jhenson1/435400
+when: 1541134852.51739
