@@ -1,15 +1,10 @@
-Linear Regression with Zillow House Prices
+Linear Regression with House Prices
 ================
 
-Introduction
-============
-
-Zillow Group is a set of brands with a mission to "Build the largest, most trusted and vibrant home-related marketplace in the world". Within Zillow Group exists Zillow, a real estate and rental marketplace that seeks to empower consumers with data and knowledge throughout the home buying/renting lifecycle. Zillow's Zestimate is an estimated market value for an individual home that seeks to provide buyers and sellers with a viable starting point for home valuation.
-
 Kaggle - House Prices: Advanced Regression Techniques
------------------------------------------------------
+=====================================================
 
-In the form of an open Kaggle competition, Zillow has provided housing data with 79 attributes for residentail homes in Ames, Iowa. The goal is to predict the final price of each home. Here, we will focus on the application of linear, stepwise, and penalized regression models. It is worth noting that more time should be spent exploring the data and developing intuition. However, my goal here is to show the application of regression techniques.
+In the form of an open Kaggle competition, Kaggle has provided housing data with 79 attributes for residentail homes in Ames, Iowa. The goal is to predict the final price of each home. Here, we will focus on the application of linear, stepwise, and penalized regression models. It is worth noting that more time should be spent exploring the data and developing intuition. However, my goal here is to show the application of regression techniques.
 
 Data
 ====
@@ -646,13 +641,13 @@ From the plots above we see how the size of the coefficients increase as lambda 
 
 In the following code, I am choosing to use lambda.1se to evaluate models. It is worth noting that lambda.min may give the best model, but it also may slightly overfit or be too complex. Instead, lambda.1se is the simplest model that has comparable error to the best model.
 
-Lets count how many coefficients each model keeps at lambda.1se:
+Lets count how many coefficients each model keeps:
 
 ``` r
 nrow(coeff_mod10) # LASSO
 ```
 
-    ## [1] 20
+    ## [1] 25
 
 ``` r
 nrow(coeff_mod0) # Ridge
@@ -681,9 +676,9 @@ df_eval
 ```
 
     ##        moddf   lamda1se  lamdamin     cvmMin   cvsdMin
-    ## 1      Lasso   8113.003  1520.229 1112698616 156261716
-    ## 2      Ridge 236498.338 44315.471 1079036001 239691086
-    ## 3 ElasticNet  13471.115  2524.241 1064107710 214894559
+    ## 1      Lasso   6137.189  1262.120 1089069328 138416637
+    ## 2      Ridge 259556.634 48636.174 1094256624 258324315
+    ## 3 ElasticNet  13471.115  2770.351 1062508700 184036304
 
 Comparing Results
 =================
@@ -698,9 +693,9 @@ comp
     ## 1        LinReg   255  0.919                   
     ## 2 Backward Step   123  0.924                   
     ## 3     Both Step   125  0.924                   
-    ## 4         LASSO    20        1.113e+09 1.56e+08
-    ## 5         Ridge   306        1.079e+09  2.4e+08
-    ## 6    ElasticNet    24        1.064e+09 2.15e+08
+    ## 4         LASSO    25        1.089e+09 1.38e+08
+    ## 5         Ridge   306        1.094e+09 2.58e+08
+    ## 6    ElasticNet    24        1.063e+09 1.84e+08
 
 From above, we can rule out the linear regression (LinReg) and stepwise models since they have an unreasonably high adjusted-R squared as well as a large amount of coefficients. Looking at the penalized regression models, we want to choose a model with the best cross-validated mean error (cvm) and the smallest estimate of standard error for cvm (cvsd). Even though the LASSO and ElasticNet model produce a better cvm than the Ridge regression, we might expect the Ridge regression to perform better in prediction due to the amount of coefficients in the model. Deciding between the penalized models may be circumstantial to other requirements (i.e. Fitting and storing a model with 24 coefficients is less taxing than doing so with 306 coefficients). Finally, lets take a look at the scoring metric used by Kaggle. According to the competition webpage, "Submissions are evaluated on Root-Mean-Squared-Error (RMSE) between the logarithm of the predicted value and the logarithm of the observed sales price."
 
@@ -713,16 +708,16 @@ comp1
     ## 1        LinReg   255 0.19622
     ## 2 Backward Step   123 0.54674
     ## 3     Both Step   125 0.20231
-    ## 4         LASSO    20 0.16560
+    ## 4         LASSO    25 0.16560
     ## 5         Ridge   306 0.16154
     ## 6    ElasticNet    24 0.16495
 
 Final Words
 ===========
 
-In this write up we have attempted to predict housing prices in Ames, Iowa using a dataset provided by Zillow via Kaggle. Quickly, we found that fitting a linear regression model to all attributes results in overfitting the dataset and poor predictive performance.
+In this write up we have attempted to predict housing prices in Ames, Iowa using a dataset provided by Kaggle. Quickly, we found that fitting a linear regression model to all attributes results in overfitting the dataset and poor predictive performance.
 
-By using stepwise regression, we found that we could eliminate some of the attributes and produce a model with similiar adjusted-R squared as the larger linear model. However, this technique did not prevent overfitting the data and took a large amount of time to run. Further, the results of stepwise regression do not guarantee improvement. As seen in the results table above, our backwards stepwise regression actually presented a significant decrease in prediction performance, while our secod stepwise model delivered similiar performance to the LinReg model.
+By using stepwise regression, we found that we could eliminate some of the attributes and produce a model with similiar adjusted-R squared as the larger linear model. However, this technique did not prevent overfitting the data and took a large amount of time to run. Further, the results of stepwise regression do not guarantee improvement. As seen in the results table above, our backwards stepwise regression actually presented a significant decrease in prediction performance, while our second stepwise model delivered similiar performance to the LinReg model.
 
 By using penalized regression techniques, we have produced models that reduce overfitting and improve predictive performance. In the case of LASSO and Elast Net regression, we have been able to reduce the amount of attributes significantly to 24 from 306 while maintaining similiar predictive performance.
 
