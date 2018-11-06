@@ -37,7 +37,7 @@ colnames(train[colSums(is.na(train))>0])
 
 Note that handling of NA and missing values is very important and can have an impact on the performance of a predictive model. Somes modelling techniques are better at handling NA values than others. For the sake of demonstrating the application of regression techniques, I am going to breeze over this otherwise very important topic.
 
-In the light of brevity, we are simply going to dummy the dataframe to create columns for categorical attributes. In doing so, it also becomes apparent that we have three numerical features that contain NA values. We are going to set these to zero. In any other setting, it would be important to take the time and investigate each of columns with NA values. There are several ways to handle missing and NA values, and taking the time to understand why they occur will allow the analyst to develop intuition and select appropriate techniques to handle such occurences. 
+In the light of brevity, we are simply going to dummy the dataframe to create columns for categorical attributes. In doing so, it also becomes apparent that we have three numerical features that contain NA values. We are going to set these to zero. In any other setting, it would be important to take the time and investigate each of the columns with NA values. There are several ways to handle missing and NA values, and taking the time to understand why they occur will allow the analyst to develop intuition and select appropriate techniques to handle such occurences. 
 
 Some of the other techniques for handling NA values include dropping rows/columns and imputation. When imputing the value of an NA, we can use simple calculations such as a mean and median, or we can even deploy other statistical learning techniques. K-NN, linear regression, and decision trees are other methods deployed in some wrapper classes such as caret. In a later writeup, we may explore the use of caret for the data science workflow.
 ```{r}
@@ -46,7 +46,7 @@ df <- dummy.data.frame(train)
 colnames(df[colSums(is.na(df))>0])
 ```
 
-Since we have been provided test and train dataset to fit and score our models, we will need to combine them before dummying the data. If we do not do this step, we will produce an error when using the predict() function. We will add a column to identify each row by its original dataset. Likewise, we will add a columns titled "SalePrice" to the test set - this is neccesary to maintain the correct dimensions when combining the test and train datasets. 
+Since we have been provided test and train dataset to fit and score our models, we will need to combine them before dummying the data. If we do not do this step, we will produce an error when using the predict() function. We will add a column to identify each row by its original dataset. Likewise, we will add a column titled "SalePrice" to the test set - this is neccesary to maintain the correct dimensions when combining the test and train datasets. 
 
 ```{r}
 df[is.na(df)]<- 0
@@ -56,7 +56,8 @@ df[is.na(df)]<- 0
 # Import data
 train <- read.csv( "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/train.csv")
 test <- read.csv( "C:/Users/jlh_5/OneDrive/Documents/zillowHousePrices/Zillow-House-Prices/test.csv")
-
+```
+```{r}
 # Combine datasets before preprocessing to ensure same columns during prediction 
 train_df <- train
 test_df <- test
@@ -156,7 +157,7 @@ Given that our initial linear regression model appears to overfit and has severa
 
 Least Absolute Shrinkage and Selection Operator (LASSO) is a technique in regression that provides variable selection. The idea is reduce the size of coefficients so that the regression model generalizes better when applied to new data. I.e. to improve the prediction accuracy.
 
-Ridge regression has similiar goals, however, Ridge regressopm will not set a coefficient to zero. As well, it is noted that Ridge regression can handle multicollinearity (Applied Predictive Modeling).
+Ridge regression has similiar goals, however, Ridge regression will not set a coefficient to zero. As well, it is noted that Ridge regression can handle multicollinearity (Applied Predictive Modeling).
 
 Elastic Net Regression allows us to utilize a combination of LASSO and Ridge penalties and tune for an effective combination of each to reduce error.
 
@@ -174,7 +175,7 @@ mod.lasso <- glmnet(x,y, family = "gaussian", alpha = 1)
 mod.ridge <- glmnet(x,y, family = "gaussian", alpha = 0)
 mod.enet <- glmnet(x,y, family = "gaussian", alpha = 0.5)
 
-# Loop through cv.glmnet to produce models with alpa as each tenth from 0 to 1 
+# Loop through cv.glmnet to produce models with alpa at each tenth from 0 to 1 
 for (i in 0:10){
   assign(paste("mod",i,sep = ""), cv.glmnet(x,y, type.measure = "mse", alpha = i/10,
                                             family = "gaussian"))
@@ -236,7 +237,7 @@ df_eval
 
 # Comparing Results
 
-Test, train, and validate is a workflow that can be in predictive modeling to produce, monitor, and hopefully improve results. So far, we have built models and evaluated them on in sample metrics such as r^2 or with calculations using sampling techniques (i.e. cross-validated mean error: cvm). Using the predict function, we can specify a trained model and a dataset to create predictions. I'll skip the code for brevity, but in the dataframe below we can see the results of each model after submitting them for scoring to the Kaggle competition
+Test, train, and validate is a workflow that can be used in predictive modeling to produce, monitor, and hopefully improve results. So far, we have built models and evaluated them on in sample metrics such as r^2 or with calculations using sampling techniques (i.e. cross-validated mean error: cvm). Using the predict function, we can specify a trained model and a dataset to create predictions. I'll skip the code for brevity, but in the dataframes below we can see a comparison between the results of each of the models.  
 
 ```{r, include=FALSE}
 Model <- c("LinReg", "Backward Step", "Both Step","LASSO","Ridge","ElasticNet")

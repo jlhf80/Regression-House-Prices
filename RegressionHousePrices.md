@@ -2,7 +2,7 @@ Linear Regression with House Prices
 ================
 
 Kaggle - House Prices: Advanced Regression Techniques
-=====================================================
+-----------------------------------------------------
 
 In the form of an open Kaggle competition, Kaggle has provided housing data with 79 attributes for residentail homes in Ames, Iowa. The goal is to predict the final price of each home. Here, we will focus on the application of linear, stepwise, and penalized regression models. It is worth noting that more time should be spent exploring the data and developing intuition. However, my goal here is to show the application of regression techniques.
 
@@ -152,7 +152,7 @@ colnames(train[colSums(is.na(train))>0])
 
 Note that handling of NA and missing values is very important and can have an impact on the performance of a predictive model. Somes modelling techniques are better at handling NA values than others. For the sake of demonstrating the application of regression techniques, I am going to breeze over this otherwise very important topic.
 
-In the light of brevity, we are simply going to dummy the dataframe to create columns for categorical attributes. In doing so, it also becomes apparent that we have three numerical features that contain NA values. We are going to set these to zero. In any other setting, it would be important to take the time and investigate each of columns with NA values. There are several ways to handle missing and NA values, and taking the time to understand why they occur will allow the analyst to develop intuition and select appropriate techniques to handle such occurences.
+In the light of brevity, we are simply going to dummy the dataframe to create columns for categorical attributes. In doing so, it also becomes apparent that we have three numerical features that contain NA values. We are going to set these to zero. In any other setting, it would be important to take the time and investigate each of the columns with NA values. There are several ways to handle missing and NA values, and taking the time to understand why they occur will allow the analyst to develop intuition and select appropriate techniques to handle such occurences.
 
 Some of the other techniques for handling NA values include dropping rows/columns and imputation. When imputing the value of an NA, we can use simple calculations such as a mean and median, or we can even deploy other statistical learning techniques. K-NN, linear regression, and decision trees are other methods deployed in some wrapper classes such as caret. In a later writeup, we may explore the use of caret for the data science workflow.
 
@@ -169,10 +169,75 @@ colnames(df[colSums(is.na(df))>0])
 
     ## [1] "LotFrontage" "MasVnrArea"  "GarageYrBlt"
 
-Since we have been provided test and train dataset to fit and score our models, we will need to combine them before dummying the data. If we do not do this step, we will produce an error when using the predict() function. We will add a column to identify each row by its original dataset. Likewise, we will add a columns titled "SalePrice" to the test set - this is neccesary to maintain the correct dimensions when combining the test and train datasets.
+Since we have been provided test and train dataset to fit and score our models, we will need to combine them before dummying the data. If we do not do this step, we will produce an error when using the predict() function. We will add a column to identify each row by its original dataset. Likewise, we will add a column titled "SalePrice" to the test set - this is neccesary to maintain the correct dimensions when combining the test and train datasets.
 
 ``` r
 df[is.na(df)]<- 0
+```
+
+``` r
+# Combine datasets before preprocessing to ensure same columns during prediction 
+train_df <- train
+test_df <- test
+train_df["dataset"]<- c("train")
+test_df["SalePrice"]<- 0
+
+test_df["dataset"]<- c("test")
+
+df <- rbind(train_df,test_df)
+
+# dummy data
+df <- dummy.data.frame(df)
+
+# 3 attributes are int and have nulls
+colnames(df[colSums(is.na(df))>0])
+```
+
+    ##  [1] "LotFrontage"  "MasVnrArea"   "BsmtFinSF1"   "BsmtFinSF2"  
+    ##  [5] "BsmtUnfSF"    "TotalBsmtSF"  "BsmtFullBath" "BsmtHalfBath"
+    ##  [9] "GarageYrBlt"  "GarageCars"   "GarageArea"
+
+``` r
+str(df[colSums(is.na(df))>0])
+```
+
+    ## 'data.frame':    2919 obs. of  11 variables:
+    ##  $ LotFrontage : int  65 80 68 60 84 85 75 NA 51 50 ...
+    ##  $ MasVnrArea  : int  196 0 162 0 350 0 186 240 0 0 ...
+    ##  $ BsmtFinSF1  : int  706 978 486 216 655 732 1369 859 0 851 ...
+    ##  $ BsmtFinSF2  : int  0 0 0 0 0 0 0 32 0 0 ...
+    ##  $ BsmtUnfSF   : int  150 284 434 540 490 64 317 216 952 140 ...
+    ##  $ TotalBsmtSF : int  856 1262 920 756 1145 796 1686 1107 952 991 ...
+    ##  $ BsmtFullBath: int  1 0 1 1 1 1 1 1 0 1 ...
+    ##  $ BsmtHalfBath: int  0 1 0 0 0 0 0 0 0 0 ...
+    ##  $ GarageYrBlt : int  2003 1976 2001 1998 2000 1993 2004 1973 1931 1939 ...
+    ##  $ GarageCars  : int  2 2 2 3 3 2 2 2 2 1 ...
+    ##  $ GarageArea  : int  548 460 608 642 836 480 636 484 468 205 ...
+
+``` r
+# replace with zero
+df[is.na(df)]<-0
+str(df[colSums(is.na(df))>0])
+```
+
+    ## 'data.frame':    2919 obs. of  0 variables
+
+``` r
+# Seperate test and train df
+train <- df[df$datasettest %in% 0,]
+test <- df[df$datasettest %in% 1,]
+
+
+# remove added columns for test and train, sale price on test set
+drop <- c("datasettest","datasettrain")
+drop_sale <- c("SalePrice")
+
+train <- train[, !(names(train) %in% drop)]
+test <- test[, !(names(test) %in% drop)]
+test <- test[, !(names(test) %in% drop_sale)]
+
+# assignment to re use code
+df <- train
 ```
 
 Linear Regression
@@ -534,18 +599,18 @@ plot(fit)
     ## Warning: not plotting observations with leverage one:
     ##   121, 186, 251, 272, 326, 333, 347, 376, 399, 584, 596, 667, 811, 945, 949, 1004, 1012, 1188, 1231, 1271, 1276, 1299, 1322, 1371, 1380, 1387
 
-![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-9-1.png)![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-9-2.png)
+![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-10-1.png)![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-10-2.png)
 
     ## Warning: not plotting observations with leverage one:
     ##   121, 186, 251, 272, 326, 333, 347, 376, 399, 584, 596, 667, 811, 945, 949, 1004, 1012, 1188, 1231, 1271, 1276, 1299, 1322, 1371, 1380, 1387
 
-![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-9-3.png)
+![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-10-3.png)
 
     ## Warning in sqrt(crit * p * (1 - hh)/hh): NaNs produced
 
     ## Warning in sqrt(crit * p * (1 - hh)/hh): NaNs produced
 
-![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-9-4.png)
+![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-10-4.png)
 
 Stepwise Regression
 ===================
@@ -588,7 +653,7 @@ Given that our initial linear regression model appears to overfit and has severa
 
 Least Absolute Shrinkage and Selection Operator (LASSO) is a technique in regression that provides variable selection. The idea is reduce the size of coefficients so that the regression model generalizes better when applied to new data. I.e. to improve the prediction accuracy.
 
-Ridge regression has similiar goals, however, Ridge regressopm will not set a coefficient to zero. As well, it is noted that Ridge regression can handle multicollinearity (Applied Predictive Modeling).
+Ridge regression has similiar goals, however, Ridge regression will not set a coefficient to zero. As well, it is noted that Ridge regression can handle multicollinearity (Applied Predictive Modeling).
 
 Elastic Net Regression allows us to utilize a combination of LASSO and Ridge penalties and tune for an effective combination of each to reduce error.
 
@@ -617,7 +682,7 @@ mod.lasso <- glmnet(x,y, family = "gaussian", alpha = 1)
 mod.ridge <- glmnet(x,y, family = "gaussian", alpha = 0)
 mod.enet <- glmnet(x,y, family = "gaussian", alpha = 0.5)
 
-# Loop through cv.glmnet to produce models with alpa as each tenth from 0 to 1 
+# Loop through cv.glmnet to produce models with alpa at each tenth from 0 to 1 
 for (i in 0:10){
   assign(paste("mod",i,sep = ""), cv.glmnet(x,y, type.measure = "mse", alpha = i/10,
                                             family = "gaussian"))
@@ -635,7 +700,7 @@ plot(mod.enet, xvar = "lambda", main = "ElasticNet")
 plot(mod5, main = "ElasticNet")
 ```
 
-![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-13-1.png)
+![](RegressionHousePrices_files/figure-markdown_github/unnamed-chunk-14-1.png)
 
 From the plots above we see how the size of the coefficients increase as lambda increases. Likewise, we can see the mean-squared error (MSE) of each model as lambda and the amount of coefficients varies. The dotted lines on the MSE plot represent the standard error of the minimum lambda value for the best of each model.
 
@@ -647,7 +712,7 @@ Lets count how many coefficients each model keeps:
 nrow(coeff_mod10) # LASSO
 ```
 
-    ## [1] 25
+    ## [1] 31
 
 ``` r
 nrow(coeff_mod0) # Ridge
@@ -675,15 +740,15 @@ df_eval <- data.frame(moddf,lamda1se, lamdamin, cvmMin, cvsdMin)
 df_eval
 ```
 
-    ##        moddf   lamda1se  lamdamin     cvmMin   cvsdMin
-    ## 1      Lasso   6137.189  1262.120 1089069328 138416637
-    ## 2      Ridge 259556.634 48636.174 1094256624 258324315
-    ## 3 ElasticNet  13471.115  2770.351 1062508700 184036304
+    ##        moddf   lamda1se   lamdamin     cvmMin   cvsdMin
+    ## 1      Lasso   4642.559   792.6485  976713145 217231341
+    ## 2      Ridge 215488.478 44315.4707 1053896192 182910948
+    ## 3 ElasticNet  13471.115  2524.2410 1060991902 238089535
 
 Comparing Results
 =================
 
-Test, train, and validate is a workflow that can be in predictive modeling to produce, monitor, and hopefully improve results. So far, we have built models and evaluated them on in sample metrics such as r^2 or with calculations using sampling techniques (i.e. cross-validated mean error: cvm). Using the predict function, we can specify a trained model and a dataset to create predictions. I'll skip the code for brevity, but in the dataframe below we can see the results of each model after submitting them for scoring to the Kaggle competition
+Test, train, and validate is a workflow that can be used in predictive modeling to produce, monitor, and hopefully improve results. So far, we have built models and evaluated them on in sample metrics such as r^2 or with calculations using sampling techniques (i.e. cross-validated mean error: cvm). Using the predict function, we can specify a trained model and a dataset to create predictions. I'll skip the code for brevity, but in the dataframes below we can see a comparison between the results of each of the models.
 
 ``` r
 comp
@@ -693,9 +758,9 @@ comp
     ## 1        LinReg   255  0.919                   
     ## 2 Backward Step   123  0.924                   
     ## 3     Both Step   125  0.924                   
-    ## 4         LASSO    25        1.089e+09 1.38e+08
-    ## 5         Ridge   306        1.094e+09 2.58e+08
-    ## 6    ElasticNet    24        1.063e+09 1.84e+08
+    ## 4         LASSO    31        976700000 2.17e+08
+    ## 5         Ridge   306        1.054e+09 1.83e+08
+    ## 6    ElasticNet    24        1.061e+09 2.38e+08
 
 From above, we can rule out the linear regression (LinReg) and stepwise models since they have an unreasonably high adjusted-R squared as well as a large amount of coefficients. Looking at the penalized regression models, we want to choose a model with the best cross-validated mean error (cvm) and the smallest estimate of standard error for cvm (cvsd). Even though the LASSO and ElasticNet model produce a better cvm than the Ridge regression, we might expect the Ridge regression to perform better in prediction due to the amount of coefficients in the model. Deciding between the penalized models may be circumstantial to other requirements (i.e. Fitting and storing a model with 24 coefficients is less taxing than doing so with 306 coefficients). Finally, lets take a look at the scoring metric used by Kaggle. According to the competition webpage, "Submissions are evaluated on Root-Mean-Squared-Error (RMSE) between the logarithm of the predicted value and the logarithm of the observed sales price."
 
@@ -708,7 +773,7 @@ comp1
     ## 1        LinReg   255 0.19622
     ## 2 Backward Step   123 0.54674
     ## 3     Both Step   125 0.20231
-    ## 4         LASSO    25 0.16560
+    ## 4         LASSO    31 0.16560
     ## 5         Ridge   306 0.16154
     ## 6    ElasticNet    24 0.16495
 
