@@ -11,7 +11,7 @@ train <- read.csv(train)
 test <- read.csv(test)
 ```
 
-# Kaggle - House Prices: Advanced Regression Techniques
+## Kaggle - House Prices: Advanced Regression Techniques
 
 In the form of an open Kaggle competition, Kaggle has provided housing data with 79 attributes for residentail homes in Ames, Iowa. The goal is to predict the final price of each home. Here, we will focus on the application of linear, stepwise, and penalized regression models. It is worth noting that more time should be spent exploring the data and developing intuition. However, my goal here is to show the application of regression techniques.
 
