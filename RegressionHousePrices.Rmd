@@ -200,7 +200,7 @@ From the plots above we see how the size of the coefficients increase as lambda 
 
 In the following code, I am choosing to use lambda.1se to evaluate models. It is worth noting that lambda.min may give the best model, but it also may slightly overfit or be too complex. Instead, lambda.1se is the simplest model that has comparable error to the best model.
 
-Lets count how many coefficients each model keeps at lambda.1se:
+Lets count how many coefficients each model keeps:
 
 ```{r, include=FALSE}
 cmat10 <- coef(mod10,s=mod10$lambda.1se)[,1] # [,1] drops sparse matrix format
